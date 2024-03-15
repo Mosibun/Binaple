@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
+    <title>Binaple</title>
+</head>
+<body>
+    <br><br><br><br>
+    <div class="upgrading-count" id="upgradingCount"></div><br><br>
+    <div class="coins" id="coins"></div><br><br>
+    <div class="gems" id="gemsDisplay"></div><br><br>
+    <div class="builder-count" id="builderCount"></div><br><br><br><br>
+
+    <div class="main-hall" id="mainHall">
+        <h2>Main Hall</h2>
+        <p style="font-size: 20px; margin-top: -5px;">Level: <span id="mainHallLevel">1</span></p>
+        <button class="upgrade-main-hall-button" id="upgradeMainHall">Upgrade</button>
+        <div class="timer" id="mainHallTimer"></div>
+    </div><br>
+
+    <!-- Coin Mine -->
+    <div class="coin-mine" id="coinMine">
+    <h2>Coin Mine</h2>
+    <p>Level: <span id="coinMineLevel">1</span></p>
+    <button class="upgradeButton" id="upgradeCoinMine">Upgrade</button>
+    <button class="collectButton" id="collectCoins">Collect</button>
+    <div class="timer" id="coinMineTimer"></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+
+        <div class="header">Binaple</div>
+        <br><br><br><hr style="margin-left: -20px; margin-right: -20px;">
+
+        <h2 style="color: #ffffff;">New offers!</h2>
+        <button id="buyCoinsButton">Buy 500 Coins for 1 Gem</button>
+
+        <div id="maxedBuildingsBar">
+            <h2 style="color: #ffffff;">Your level</h2>
+            <div id="maxedBuildingsProgressBar">
+                <div id="volumeBar"></div>
+            <span id="volumeRatio"></span>
+        </div>
+
+        <br><br>
+        <button id="buyBuilderButton">Buy Builder (Cost: 4000 Coins)</button>
+
+        <button id="claimGiftButton">Claim Daily Gift<br>for free</button>
+
+        <button id="popupBtn">Shop</button>
+        <br><br><br><br><br>
+
+        <button class="theme-button" onclick="toggleSidebar()">Close</button>
+        <p style="color: white;">Scroll to get game reset button</p>
+        <br><br><br><br><br><br><br><br><br><br><br><br>
+        <button id="resetButton">Reset Game</button>
+        <br>
+
+    </div>
+</div>
+    <!-- Sidebar toggle button -->
+    <button class="sidebar-toggle" onclick="toggleSidebar()"><img src="Sidebar.png" width="25" height="25"></button>
+    
+    <div class="overlay" id="overlay"></div>
+    <div class="popup" id="popup">
+        <h2 class="header-shop">Binaple Shop
+            <span class="close-button" title="Close the popup" onclick="closePopup()">&times;</span>
+        </h2>
+        <div class="button-container">
+            <button class="shop-button" id="buyBuilderGemButton">
+                <img src="builder.png" width="100">
+                <br>
+                Builder for 7 Gems
+            </button>
+
+            <button class="shop-button" id="buy1100CoinsButton">
+                <img src="coin-currency.png" width="100">
+                <br>
+                1600 Coins for 3 Gems
+            </button>  
+        </div>
+    </div>
+
+
+    <script src="Buy Builder for 3 Gems.js"></script>
+    <script src="Buy 1100 coins for 2 gems.js"></script>
+<script>
+    "use strict";
+
+    const numBuildings = 110;
+    const buildings = [];
+    let coins = parseInt(localStorage.getItem('coins')) || 0; // Load coins from localStorage or default to 0
+    let buildersLeft = parseInt(localStorage.getItem('builders')) || 2; // Load builders from localStorage or default to 2
+    document.getElementById('coins').textContent = `Coins: ${coins}`;
+    document.getElementById('builderCount').textContent = `Builders Left: ${buildersLeft}`; // Display initial builder count
+
+// Function to reset the game
+function resetGame() {
+    // Clear all game data from localStorage
+    localStorage.clear();
+
+    // Reload the page to start the game from the beginning
+    location.reload();
+}
+
+// Event listener for the reset button
+document.getElementById('resetButton').addEventListener('click', resetGame);
+
+// Function to update the upgrading count
+function updateUpgradingCount() {
+    const upgradingCount = buildings.filter(building => building.upgrading).length;
+    document.getElementById('upgradingCount').textContent = `Upgrading: ${upgradingCount}`;
+}
+
+// Function to update the builder count
+function updateBuilderCount() {
+    document.getElementById('builderCount').textContent = `Builders Left: ${buildersLeft}`;
+                // Save the updated coins and builders count to localStorage
+                localStorage.setItem('coins', coins.toString());
+            }
+
+// Function to upgrade a building
+function upgradeBuilding(index) {
+    const building = buildings[index];
+    if (building.level < building.maxLevel && buildersLeft > 0) {
+        if (coins >= 14) {
+            coins -= 14;
+            document.getElementById('coins').textContent = `Coins: ${coins}`;
+            // Rest of the upgrade process remains the same
+            const levelElement = document.getElementById(`level${index}`);
+            const timerElement = document.getElementById(`timer${index}`);
+            const upgradeButton = document.getElementById(`upgradeButton${index}`);
+
+            upgradeButton.disabled = true;
+            building.upgrading = true;
+            buildersLeft--;
+            updateBuilderCount();
+            updateUpgradingCount();
+            let seconds = building.upgradeTime / 1000;
+            startTimer(timerElement, seconds);
+
+            setTimeout(() => {
+                building.level++;
+                levelElement.textContent = building.level;
+                upgradeButton.disabled = false;
+                building.upgrading = false;
+                buildersLeft++;
+                updateBuilderCount();
+                updateUpgradingCount();
+                clearInterval(timerElement.timerInterval);
+                timerElement.textContent = '';
+
+                if (building.level === building.maxLevel) {
+                // Building is maxed out, gift a gem
+                gems++;
+                saveGems(); // Save the updated gem count
+                alert('Congratulations! Building maxed out. You received a gem!');
+            }
+
+                // Store the updated level in localStorage
+                localStorage.setItem(`buildingLevel${index}`, building.level);
+
+            }, building.upgradeTime);
+        } else {
+            alert('Not enough coins to upgrade. Collect 14 coins to upgrade');
+        }
+    }
+}
+
+// Function to start a timer
+function startTimer(timerElement, seconds) {
+    timerElement.textContent = `Remaining: ${seconds}s`;
+    timerElement.timerInterval = setInterval(() => {
+        seconds--;
+        timerElement.textContent = `Remaining: ${seconds}s`;
+        if (seconds === 0) {
+            clearInterval(timerElement.timerInterval);
+            timerElement.textContent = '';
+        }
+    }, 1000);
+}
+
+// Generate building information for 200 buildings
+for (let i = 1; i <= numBuildings; i++) {
+    const storedLevel = localStorage.getItem(`buildingLevel${i - 1}`);
+    buildings.push({
+        level: storedLevel ? parseInt(storedLevel) : 1,
+        maxLevel: i * 4,
+        upgradeTime: (i + 10) * 1000,
+        upgrading: false,
+    });
+}
+
+// Create and display 200 buildings with numbered names and levels
+buildings.forEach((building, index) => {
+    const buildingDiv = document.createElement('div');
+    buildingDiv.className = 'building';
+    buildingDiv.innerHTML = `
+        <h2>Building ${index + 1}</h2>
+        <p>Level: <span id="level${index}">${building.level}</span></p>
+        <div style="margin-top: -5px;"></div>
+        <button class="upgradeButton" id="upgradeButton${index}" onclick="upgradeBuilding(${index})">Upgrade</button>
+        <div class="timer" id="timer${index}"></div>
+    `;
+    document.body.appendChild(buildingDiv);
+});
+
+// sidebar code
+function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    const sidebarToggle = document.querySelector(".sidebar-toggle");
+
+    sidebar.classList.toggle("open");
+    sidebarToggle.style.display = sidebar.classList.contains("open") ? "none" : "block";
+}
+
+        // Function to update the builder count on the page
+        function updateBuilderCount() {
+            document.getElementById('builderCount').textContent = `Builders Left: ${buildersLeft}`;
+        }
+
+        // Function to buy a builder
+        function buyBuilder() {
+            if (buildersLeft < 6) {
+                if (coins >= 4000) {
+                    buildersLeft++;
+                    
+                    if (buildersLeft > 6) {
+                        buildersLeft = 6;
+                    }
+                    
+                    coins -= 4000;
+                    updateBuilderCount(); // Update the builder count on the page
+                    document.getElementById('coins').textContent = `Coins: ${coins}`;
+
+                    // Save the updated coins and builders count to localStorage
+                    localStorage.setItem('coins', coins.toString());
+                    localStorage.setItem('builders', buildersLeft.toString()); // Update builders count in localStorage
+                } else {
+                    alert('Not enough coins to buy a builder!');
+                }
+            } else {
+                alert('Maximum builder limit (6) reached.');
+            }
+        }
+
+        // Event listener for the "Buy Builder" button
+        document.getElementById('buyBuilderButton').addEventListener('click', buyBuilder);
+
+
+
+        // Call the initial update of the builder count
+        updateBuilderCount();
+
+    // Event listener for the "Buy Builder" button
+    document.getElementById('buyBuilderButton').addEventListener('click', buyBuilder);
+
+    let coinMineLevel = parseInt(localStorage.getItem('coinMineLevel')) || 1;
+    document.getElementById('coinMineLevel').textContent = coinMineLevel;
+
+    // Function to upgrade the coin mine
+    function upgradeCoinMine() {
+    if (coinMineLevel < 30 && buildersLeft > 0) { // Check if there are builders available
+        const coinMineTimerElement = document.getElementById('coinMineTimer');
+        const collectCoinsButton = document.getElementById('collectCoins'); // Get the Collect button
+
+        // Disable the upgrade button during the upgrade process
+        const upgradeButton = document.getElementById('upgradeCoinMine');
+        upgradeButton.disabled = true;
+
+        collectCoinsButton.disabled = true;
+
+        buildersLeft--;
+        updateBuilderCount(); // Update the builder count
+
+        const upgradeTimeInSeconds = 120*coinMineLevel; // Example: 10 seconds
+        let secondsLeft = upgradeTimeInSeconds;
+
+        // Display the initial timer text
+        coinMineTimerElement.textContent = `Remaining: ${secondsLeft}s`;
+
+        // Start the countdown timer
+        const timerInterval = setInterval(() => {
+            secondsLeft--;
+
+            // Update the timer display
+            coinMineTimerElement.textContent = `Remaining: ${secondsLeft}s`;
+
+            if (secondsLeft <= 0) {
+                // Upgrade completed, enable the upgrade button and Collect button again
+                clearInterval(timerInterval);
+                coinMineTimerElement.textContent = ''; // Clear the timer text
+                upgradeButton.disabled = false;
+
+                // Enable the Collect button after the upgrade is complete
+                collectCoinsButton.disabled = false;
+
+                // Increase the Coin Mine level
+                coinMineLevel++;
+                document.getElementById('coinMineLevel').textContent = coinMineLevel;
+
+                // Store the updated Coin Mine level in localStorage
+                localStorage.setItem('coinMineLevel', coinMineLevel.toString());
+            }
+        }, 1000);
+    } else if (coinMineLevel >= 30) {
+        alert('Coin Mine is already at the maximum level.');
+    } else {
+        alert('Not enough builders to upgrade the Coin Mine.');
+    }
+}
+
+// Event listener for the "Upgrade Coin Mine" button
+document.getElementById('upgradeCoinMine').addEventListener('click', upgradeCoinMine);
+
+
+// Function to collect coins from the coin mine
+function collectCoins() {
+    const coinsToCollect = coinMineLevel / 30; // Collect 1 coin in level 1, 2 coins in level 2, and so on------
+    coins += coinsToCollect;
+
+    if (coins > 10000) {
+        coins = 10000;
+        alert('You have reached the maximum coins limit!');
+    }
+
+    document.getElementById('coins').textContent = `Coins: ${coins}`;
+
+    // Store the updated coins count in localStorage
+    localStorage.setItem('coins', coins.toString());
+}
+
+// Event listener for the "Collect Coins" button
+document.getElementById('collectCoins').addEventListener('click', collectCoins);
+
+        // Initialize gems
+let gems = parseInt(localStorage.getItem('gems')) || 0;
+
+// Function to update the gems display
+function updateGemsDisplay() {
+    document.getElementById('gemsDisplay').textContent = `Gems: ${gems}`;
+}
+
+// Call the initial update of the gems count
+updateGemsDisplay();
+
+// Save the gems to localStorage when updating the count
+function saveGems() {
+    localStorage.setItem('gems', gems.toString());
+    updateGemsDisplay();
+}
+
+
+// Function to handle daily gifts
+function claimDailyGift() {
+    const currentDate = new Date();
+    const today = currentDate.toISOString().split('T')[0]; // Get today's date in the format 'YYYY-MM-DD'
+    const giftClaimedKey = `giftClaimed_${today}`;
+
+    // Check if the gift has already been claimed today
+    if (localStorage.getItem(giftClaimedKey)) {
+        alert('You have already claimed the daily gift today.');
+        return;
+    }
+/*
+    // Check if the user has enough gems to claim the gift
+    if (gems < 1) {
+        alert('Not enough gems to claim the daily gift.');
+        return;
+    }*/
+
+    switch (today) {
+
+        case '2024-03-16':
+            coins += 250;
+            gems += 32;
+            alert('You received 32 gems and 250 coins from daily gift!');
+        break;
+
+        case '2024-03-15':
+            coins += 150;
+            alert('You received 150 coins from daily gift!');
+        break;
+
+        case '2024-03-17':
+            coins += 550;
+            alert('You received 550 coins from daily gift!');
+        break;
+
+        case '2024-03-18':
+            coins += 200;
+            alert('You received 200 coins from daily gift!');
+        break;
+
+        case '2024-03-19':
+            coins += 50;
+            alert('You received 50 coins from daily gift!');
+        break;
+
+        case '2024-03-20':
+            coins += 300;
+            alert('You received 300 coins from daily gift!');
+        break;
+
+        case '2024-03-21':
+            coins += 250;
+            alert('You received 250 coins from daily gift!');
+        break;
+
+        case '2024-03-22':
+            coins += 150;
+            alert('You received 150 coins from daily gift!');
+        break;
+
+        case '2024-03-23':
+            coins += 550;
+            alert('You received 550 coins from daily gift!');
+        break;
+
+        case '2024-03-24':
+            coins += 200;
+            alert('You received 200 coins from daily gift!');
+        break;
+
+        case '2024-03-25':
+            coins += 50;
+            alert('You received 50 coins from daily gift!');
+        break;
+
+        case '2024-03-26':
+            coins += 300;
+            alert('You received 300 coins from daily gift!');
+        break;
+
+        default:
+            coins += 0.1;
+            alert('You got 0.1 coin from todays gift. Ask devoloper about this gift.');
+        return;
+    }
+
+    /*gems -= 1;*/
+
+    // Mark the gift as claimed for the current day
+    localStorage.setItem(giftClaimedKey, 'true');
+
+    // Save the updated coins and gems count to localStorage
+    localStorage.setItem('coins', coins.toString());
+    localStorage.setItem('gems', gems.toString());
+
+    // Update the UI
+    document.getElementById('coins').textContent = `Coins: ${coins}`;
+    updateGemsDisplay();
+}
+
+// Add event listener for the daily gift button
+document.getElementById('claimGiftButton').addEventListener('click', claimDailyGift);
+
+
+// Function to buy coins for 1 gem
+function buyCoinsWithGems() {
+    if (gems >= 1) {
+        coins += 500;
+        gems -= 1;
+
+        document.getElementById('coins').textContent = `Coins: ${coins}`;
+        updateGemsDisplay(); // Update the displayed gems count
+
+        // Save the updated coins and gems count to localStorage
+        localStorage.setItem('coins', coins.toString());
+        localStorage.setItem('gems', gems.toString());
+    } else {
+        alert('Not enough gems to buy coins.');
+    }
+}
+
+// Add event listener for the "Buy Coins for Gems" button
+document.getElementById('buyCoinsButton').addEventListener('click', buyCoinsWithGems);
+// Function to update the gems display
+function updateGemsDisplay() {
+    document.getElementById('gemsDisplay').textContent = `Gems: ${gems}`;
+}
+
+
+// Function to update the maxed-out buildings progress bar
+function updateMaxedBuildingsProgressBar() {
+    const maxedBuildingsCount = buildings.filter(building => building.level === building.maxLevel).length;
+    const totalBuildings = buildings.length;
+    const volumeBar = document.getElementById('volumeBar');
+    const volumeRatioText = document.getElementById('volumeRatio');
+
+    const ratio = maxedBuildingsCount / totalBuildings;
+    const volumeWidth = ratio * 100;
+
+    volumeBar.style.width = `${volumeWidth}%`;
+    volumeRatioText.textContent = `${maxedBuildingsCount} / ${totalBuildings}`;
+}
+
+// Call the function to initially update the progress bar
+updateMaxedBuildingsProgressBar();
+
+let gameIsActive = false;
+
+// Function to update and display the time continuously when the game is active
+function updateTimePlayed() {
+    if (gameIsActive) {
+        const gameStartTime = localStorage.getItem('gameStartTime');
+
+        if (gameStartTime) {
+            const currentTime = new Date().getTime();
+            const timeDifference = currentTime - parseInt(gameStartTime);
+
+            const minutesPlayed = Math.floor((timeDifference / 1000) / 60);
+            const hoursPlayed = Math.floor(minutesPlayed / 60);
+
+            const sidebarTimeElement = document.getElementById('timePlayed');
+            sidebarTimeElement.innerHTML = `Time Played: ${hoursPlayed} hours ${minutesPlayed % 60} minutes`;
+        }
+    }
+}
+
+  // Function to open the popup
+  function openPopup() {
+    document.getElementById('popup').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+  }
+
+  // Function to close the popup
+  function closePopup() {
+    document.getElementById('popup').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+  }
+
+  // Event listener for the button click
+  document.getElementById('popupBtn').addEventListener('click', openPopup);
+
+
+// Function to update the maxed-out buildings progress bar and check for gifting gems
+function updateMaxedBuildingsProgressBar() {
+    const maxedBuildingsCount = buildings.filter(building => building.level === building.maxLevel).length;
+    const totalBuildings = buildings.length;
+    const volumeBar = document.getElementById('volumeBar');
+    const volumeRatioText = document.getElementById('volumeRatio');
+
+    const ratio = maxedBuildingsCount / totalBuildings;
+    const volumeWidth = ratio * 100;
+
+    volumeBar.style.width = `${volumeWidth}%`;
+    volumeRatioText.textContent = `${maxedBuildingsCount} / ${totalBuildings}`;
+
+    if (maxedBuildingsCount === 50 && localStorage.getItem('giftGiven') !== 'true') {
+
+        localStorage.setItem('giftGiven', 'true');
+        
+        gems += 60;
+
+        localStorage.setItem('gems', gems.toString());
+
+        updateGemsDisplay();
+        alert('Congratulations! You have received 60 gems for reaching 50 maxed buildings!');
+    }
+}
+
+updateMaxedBuildingsProgressBar();
+
+// Function to ensure minimum builders //-----------------------------------Bug------------------------------
+function ensureMinimumBuilders() {
+    if (buildersLeft < 2) {
+        buildersLeft = 2;
+        updateBuilderCount(); // Update the builder count display
+        localStorage.setItem('builders', buildersLeft.toString()); // Save the updated builders count
+    }
+}
+
+
+// Call the function to ensure minimum builders //-----------------------------------Bug------------------------------
+ensureMinimumBuilders(); /*End of bug*/
+
+// Function to update the upgrading count
+function updateUpgradingCount() {
+    const upgradingCount = buildings.filter(building => building.upgrading).length;
+    const coinMineUpgrading = document.getElementById('upgradeCoinMine').disabled ? 1 : 0; // Check if Coin Mine is upgrading
+    
+    document.getElementById('upgradingCount').textContent = `Upgrading: ${upgradingCount + coinMineUpgrading}`;
+}
+
+// main hall
+let mainHallLevel = parseInt(localStorage.getItem('mainHallLevel')) || 1;
+        document.getElementById('mainHallLevel').textContent = mainHallLevel;
+
+        // Function to upgrade the main hall
+        function upgradeMainHall() {
+            const mainHallTimerElement = document.getElementById('mainHallTimer');
+            const upgradeButton = document.getElementById('upgradeMainHall');
+
+            if (mainHallLevel < 11) { // Change to the number of main hall levels you want
+                if (coins >= 8000 && buildersLeft > 0) {
+                    coins -= 8000;
+                    document.getElementById('coins').textContent = `Coins: ${coins}`;
+
+                    upgradeButton.disabled = true;
+                    buildersLeft--;
+                    updateBuilderCount();
+                    let seconds = 2800; // Seconds for upgrading
+
+                    startTimer(mainHallTimerElement, seconds);
+
+                    setTimeout(() => {
+                        mainHallLevel++;
+                        document.getElementById('mainHallLevel').textContent = mainHallLevel;
+
+                        upgradeButton.disabled = false;
+                        buildersLeft++;
+                        updateBuilderCount();
+                        clearInterval(mainHallTimerElement.timerInterval);
+                        mainHallTimerElement.textContent = '';
+
+                        localStorage.setItem('mainHallLevel', mainHallLevel.toString());
+                    }, seconds * 1000);
+                } else {
+                    alert('Not enough 8000 coins or builder to upgrade the Main Hall.');
+                }
+            } else {
+                alert('Main Hall is already at the maximum level.');
+            }
+        }
+
+        // Event listener for the "Upgrade Main Hall" button
+        document.getElementById('upgradeMainHall').addEventListener('click', upgradeMainHall);
+
+        // Function to check the main hall level and enable/disable building upgrades accordingly
+        function checkMainHallLevel() {
+            // Determine the maximum building index based on the main hall level
+            const maxBuildingIndex = mainHallLevel * 11;
+
+            // Loop through buildings and enable/disable upgrade buttons based on the main hall level
+            buildings.forEach((building, index) => {
+                const upgradeButton = document.getElementById(`upgradeButton${index}`);
+
+                if (index < maxBuildingIndex) {
+                    upgradeButton.disabled = false;
+                } else {
+                    upgradeButton.disabled = true;
+                }
+            });
+        }
+
+        // Call the function initially to set the correct upgrade status based on the main hall level
+        checkMainHallLevel();
+
+        // Function to start a timer
+        function startTimer(timerElement, seconds) {
+            timerElement.textContent = `Remaining: ${seconds}s`;
+            timerElement.timerInterval = setInterval(() => {
+                seconds--;
+                timerElement.textContent = `Remaining: ${seconds}s`;
+                if (seconds === 0) {
+                    clearInterval(timerElement.timerInterval);
+                    timerElement.textContent = '';
+                }
+            }, 1000);
+        }
+
+    // Code for right click
+    document.addEventListener('contextmenu', function(event) {
+      event.preventDefault(); // Prevent default right-click behavior
+    });
+
+
+// Function to update the maxed-out buildings progress bar and check for unlocking special feature
+function updateMaxedBuildingsProgressBar() {
+    const maxedBuildingsCount = buildings.filter(building => building.level === building.maxLevel).length;
+    const totalBuildings = buildings.length;
+    const volumeBar = document.getElementById('volumeBar');
+    const volumeRatioText = document.getElementById('volumeRatio');
+    const unlockButton = document.getElementById('unlockButton');
+
+    const ratio = maxedBuildingsCount / totalBuildings;
+    const volumeWidth = ratio * 100;
+
+    volumeBar.style.width = `${volumeWidth}%`;
+    volumeRatioText.textContent = `${maxedBuildingsCount} / ${totalBuildings}`;
+
+    if (maxedBuildingsCount >= 40 && localStorage.getItem('specialFeatureUnlocked') !== 'true') {
+        // Unlock the special feature button
+        unlockButton.style.display = 'block';
+    }
+}
+
+updateMaxedBuildingsProgressBar();
+    </script>
+</body>
+</html>
